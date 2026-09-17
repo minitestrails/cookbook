@@ -10,3 +10,15 @@ salt:
   name: Salt
   quantity: 1
   unit: pinch
+
+cheese:
+  recipe: pizza
+  name: Cheese
+  quantity: 1
+  unit: cup
+
+tomato:
+  recipe: pizza
+  name: Tomato
+  quantity: 10
+  unit: slices

@@ -1,0 +1,16 @@
+<%# app/views/recipes/_export.html.erb %>
+<% ready ||= false %>
+
+<div id="<%= dom_id(user, :recipes_export) %>">
+  <%= button_to "Export recipes", export_recipes_path, method: :post %>
+
+  <% if ready %>
+    <div role="alert" data-controller="removable">
+      <span>Your export file is ready.</span>
+      <%= link_to "Download", download_recipes_path, data: { turbo: false } %>
+      <button type="button" aria-label="Dismiss" data-action="removable#remove">
+        <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
+  <% end %>
+</div>

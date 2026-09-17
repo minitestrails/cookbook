@@ -274,15 +274,23 @@ class RecipesIntegrationTest < ActionDispatch::IntegrationTest
   end
 
   test "shares a recipe" do
-    sign_in_as users(:alice)
+    sender = users(:alice)
     recipe = recipes(:pancakes)
+
+    sign_in_as sender
 
     get recipe_url(recipe)
     assert_response :success
     assert_select "dialog"
     assert_select "input[name='recipe[recipient_email]']"
 
-    assert_emails 1 do
+    assert_enqueued_email_with RecipeMailer,
+                               :share,
+                               args: [
+                                 recipe,
+                                 "friend@example.com",
+                                 sender.email_address
+                               ] do
       post share_recipe_url(recipe),
            params: {
              recipe: {
@@ -300,7 +308,9 @@ class RecipesIntegrationTest < ActionDispatch::IntegrationTest
   test "guest shares a recipe" do
     recipe = recipes(:pancakes)
 
-    assert_emails 1 do
+    assert_enqueued_email_with RecipeMailer,
+                               :share,
+                               args: [recipe, "friend@example.com", nil] do
       post share_recipe_url(recipe),
            params: {
              recipe: {
@@ -313,5 +323,50 @@ class RecipesIntegrationTest < ActionDispatch::IntegrationTest
     follow_redirect!
     assert_response :success
     assert_match recipe.title, response.body
+  end
+
+  test "exports recipes" do
+    sign_in_as users(:alice)
+
+    get recipes_url
+    assert_response :success
+    assert_select "button", text: "Export recipes"
+    assert_select "a", text: "Download", count: 0
+
+    assert_enqueued_with(job: ExportRecipesJob, args: [users(:alice).id]) do
+      post export_recipes_url
+    end
+
+    assert_response :success
+    assert_equal "Your recipes are being exported.", flash.notice
+  end
+
+  test "downloads the export file" do
+    sign_in_as users(:alice)
+    user = users(:alice)
+
+    ExportRecipesJob.perform_now(user.id)
+
+    get download_recipes_url
+    assert_response :success
+    assert_equal "text/plain", response.media_type
+    assert_includes response.headers["Content-Disposition"], "attachment"
+    assert_match(
+      /recipes-export-\d{14}\.txt/,
+      response.headers["Content-Disposition"]
+    )
+    assert_includes response.body, recipes(:pancakes).title
+    assert_includes response.body, recipes(:lentil_soup).title
+    assert_includes response.body, "Flour"
+  end
+
+  test "redirects to index page if export file is missing for the user" do
+    sign_in_as users(:alice)
+
+    get download_recipes_url
+
+    assert_redirected_to recipes_url
+    follow_redirect!
+    assert_equal "Export file is not ready yet.", flash.alert
   end
 end

@@ -2,6 +2,8 @@
 require "application_system_test_case"
 
 class RecipesTest < ApplicationSystemTestCase
+  include ActiveJob::TestHelper
+
   test "visits the list" do
     visit recipes_url
     assert_selector "h1", text: "Recipes"
@@ -141,5 +143,31 @@ class RecipesTest < ApplicationSystemTestCase
 
     assert_text "Recipe shared with friend@example.com"
     assert_text recipe.title
+  end
+
+  test "exports recipes" do
+    sign_in_to_ui_as users(:alice)
+
+    visit recipes_url
+    assert_no_text "Download"
+
+    click_on "Export recipes"
+    assert_text "Your recipes are being exported."
+
+    perform_enqueued_jobs only: ExportRecipesJob
+
+    assert_text "Download"
+    click_on "Download"
+
+    wait_for_download
+    assert_match(/recipes-export-\d{14}\.txt/, File.basename(download))
+
+    contents = File.read(download)
+    assert_includes contents, recipes(:pancakes).title
+    assert_includes contents, recipes(:lentil_soup).title
+    assert_includes contents, recipes(:pizza).title
+    assert_includes contents, "Flour"
+  ensure
+    clear_downloads
   end
 end

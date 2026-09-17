@@ -1,9 +1,24 @@
 # test/application_system_test_case.rb
 require "test_helper"
+require_relative "test_helpers/download_test_helper"
 
 class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
+  include DownloadTestHelper
+
   driver = ENV["HEADFUL"] == "1" ? :chrome : :headless_chrome
-  driven_by :selenium, using: driver, screen_size: [ 1400, 1400 ]
+  driven_by :selenium, using: driver, screen_size: [1400, 1400] do |options|
+    options.add_preference(
+      :download,
+      prompt_for_download: false,
+      default_directory: DownloadTestHelper::DOWNLOAD_PATH.to_s
+    )
+    options.add_preference(
+      :browser,
+      set_download_behavior: {
+        behavior: "allow"
+      }
+    )
+  end
 
   teardown { Capybara.reset_sessions! }
 

@@ -87,10 +87,31 @@ class RecipesController < ApplicationController
 
   def share
     recipient = params[:recipe][:recipient_email]
-    sender = Current.user&.email_address
+    sender = current_user&.email_address
 
-    RecipeMailer.share(@recipe, recipient, sender).deliver_now
+    RecipeMailer.share(@recipe, recipient, sender).deliver_later
+
     redirect_to @recipe, notice: "Recipe shared with #{recipient}."
+  end
+
+  def export
+    ExportRecipesJob.perform_later(current_user.id)
+
+    flash.now[:notice] = "Your recipes are being exported."
+
+    render turbo_stream: turbo_stream.update("flash", partial: "shared/flash")
+  end
+
+  def download
+    unless current_user.recipes_export.attached?
+      redirect_to recipes_path, alert: "Export file is not ready yet."
+      return
+    end
+
+    send_data current_user.recipes_export.download,
+              filename: current_user.recipes_export.filename.to_s,
+              type: current_user.recipes_export.content_type || "text/plain",
+              disposition: :attachment
   end
 
   private

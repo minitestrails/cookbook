@@ -78,8 +78,7 @@ class RecipeAccessIntegrationTest < ActionDispatch::IntegrationTest
     preheat = steps(:preheat)
 
     assert_no_difference("Ingredient.count") do
-      delete recipe_ingredient_url(recipe, salt),
-             as: :turbo_stream
+      delete recipe_ingredient_url(recipe, salt), as: :turbo_stream
     end
     assert_redirected_to new_session_url
 
@@ -187,7 +186,9 @@ class RecipeAccessIntegrationTest < ActionDispatch::IntegrationTest
 
     get recipes_url
     assert_response :success
-    assert_select "button", text: "Destroy this recipe", count: 0
+    assert_select "#recipe_#{recipes(:pancakes).id} button",
+                  text: "Destroy this recipe",
+                  count: 0
 
     get recipe_url(recipes(:pancakes))
     assert_response :success
@@ -195,5 +196,20 @@ class RecipeAccessIntegrationTest < ActionDispatch::IntegrationTest
     assert_select "a", text: "Edit this recipe", count: 0
     assert_select "button", text: "Destroy this recipe", count: 0
     assert_select "button", text: "Remove", count: 0
+  end
+
+  test "guest cannot export recipes" do
+    get recipes_url
+    assert_response :success
+    assert_select "button", text: "Export recipes", count: 0
+    assert_select "a", text: "Download", count: 0
+
+    assert_no_enqueued_jobs only: ExportRecipesJob do
+      post export_recipes_url
+    end
+    assert_redirected_to new_session_url
+
+    get download_recipes_url
+    assert_redirected_to new_session_url
   end
 end

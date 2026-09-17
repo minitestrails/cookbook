@@ -12,3 +12,10 @@ lentil_soup:
   prep_time: 30
   servings: 6
   user: alice
+
+pizza:
+  title: Pizza
+  description: A delicious pizza with cheese and tomato sauce
+  prep_time: 60
+  servings: 2
+  user: bob

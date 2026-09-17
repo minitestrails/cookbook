@@ -8,3 +8,13 @@ simmer:
   recipe: lentil_soup
   position: 1
   instruction: Simmer lentils until tender.
+
+knead_dough:
+  recipe: pizza
+  position: 1
+  instruction: Knead the dough for 10 minutes.
+
+bake_pizza:
+  recipe: pizza
+  position: 2
+  instruction: Bake the pizza in the oven for 15 minutes at 400 degrees Fahrenheit.
