@@ -67,4 +67,4 @@ group :test do
   gem "selenium-webdriver"
 end
 
-gem "action_policy", "~> 0.7.6"
+gem "action_policy", "~> 0.7.7"
