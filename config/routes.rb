@@ -25,4 +25,17 @@ Rails.application.routes.draw do
 
     member { post :share }
   end
+
+  namespace :api do
+    namespace :v1 do
+      resources :sessions, only: :create
+      resource :session, only: :destroy
+
+      resources :recipes do
+        post :share, on: :member
+        post :export, on: :collection
+        get :download, on: :collection
+      end
+    end
+  end
 end
